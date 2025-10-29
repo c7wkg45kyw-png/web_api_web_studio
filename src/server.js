@@ -30,7 +30,7 @@ const openapiFile = fs.readFileSync("./openapi.yaml", "utf8");
 const swaggerDoc = YAML.parse(openapiFile);
 app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerDoc, { explorer: true }));
 
-
+app.use("/", "Server listening on http://localhost");
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/customers", customersRouter);
 app.use("/api/v1/users", usersRouter);
