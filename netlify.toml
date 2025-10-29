@@ -12,11 +12,6 @@
   status = 200
 
 [[redirects]]
-  from = "/swagger"
-  to = "/.netlify/functions/api/swagger"
-  status = 200
-
-[[redirects]]
   from = "/health"
   to = "/.netlify/functions/api/health"
   status = 200

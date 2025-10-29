@@ -27,57 +27,6 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/customers", customersRouter);
 app.use("/api/v1/users", usersRouter);
 
-// --- Swagger (robust path) ---
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-import YAML from "yaml";
-import swaggerUi from "swagger-ui-express";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// --- Swagger: safe path for Netlify & local ---
-import fs from "fs";
-import path from "path";
-import YAML from "yaml";
-import swaggerUi from "swagger-ui-express";
-
-function resolveOpenapiPath() {
-  // 1) บน Netlify Functions: process.cwd() จะเป็นโฟลเดอร์ฟังก์ชัน (/var/task)
-  const p1 = path.resolve(process.cwd(), "openapi.yaml");
-  if (fs.existsSync(p1)) return p1;
-
-  // 2) เผื่อกรณีรัน local: โฟลเดอร์ root โปรเจกต์
-  const p2 = path.resolve(process.cwd(), "./openapi.yaml");
-  if (fs.existsSync(p2)) return p2;
-
-  // 3) เผื่อโครงสร้างที่มี src/: ลองไล่ขึ้นไปอีกชั้น
-  const p3 = path.resolve(process.cwd(), "../openapi.yaml");
-  if (fs.existsSync(p3)) return p3;
-
-  return null;
-}
-
-let swaggerDoc = { openapi: "3.0.3", info: { title: "API Docs", version: "1.0.0" }, paths: {} };
-const openapiPath = resolveOpenapiPath();
-if (openapiPath) {
-  try {
-    const yamlText = fs.readFileSync(openapiPath, "utf8");
-    swaggerDoc = YAML.parse(yamlText);
-    console.log("[Swagger] Loaded:", openapiPath);
-  } catch (e) {
-    console.error("[Swagger] Failed to read YAML:", openapiPath, e);
-  }
-} else {
-  console.warn("[Swagger] openapi.yaml not found. Serving minimal doc.");
-}
-
-app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerDoc, { explorer: true }));
-// --- /Swagger ---
-
-
-
 app.use(notFound);
 app.use(errorHandler);
 
