@@ -27,13 +27,37 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/customers", customersRouter);
 app.use("/api/v1/users", usersRouter);
 
-// ถ้าใช้ Swagger UI (จากที่ตั้งไว้เป็น /swagger)
+// --- Swagger (robust path) ---
 import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import YAML from "yaml";
 import swaggerUi from "swagger-ui-express";
-const openapiFile = fs.readFileSync("./openapi.yaml", "utf8");
-const swaggerDoc = YAML.parse(openapiFile);
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// app.js อยู่ที่ src/app.js  → root = ../../
+const rootDir = path.resolve(__dirname, "..", "..");
+const openapiPath = path.join(rootDir, "openapi.yaml");
+
+let swaggerDoc;
+try {
+  const openapiFile = fs.readFileSync(openapiPath, "utf8");
+  swaggerDoc = YAML.parse(openapiFile);
+} catch (e) {
+  console.error("[Swagger] openapi.yaml not found at:", openapiPath, e);
+  // fallback เอกสารขั้นต่ำ เพื่อไม่ให้แอปพัง
+  swaggerDoc = {
+    openapi: "3.0.3",
+    info: { title: "API Docs", version: "1.0.0" },
+    paths: {},
+  };
+}
+
 app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerDoc, { explorer: true }));
+// --- /Swagger ---
+
 
 app.use(notFound);
 app.use(errorHandler);
