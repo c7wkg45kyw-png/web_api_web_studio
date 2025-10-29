@@ -19,3 +19,8 @@
   from = "/health"
   to = "/.netlify/functions/api/health"
   status = 200
+
+[functions]
+  node_bundler = "esbuild"
+  # บางเคสต้องระบุให้ไม่ bundle lib บางตัว (ไม่จำเป็นกับ mysql2 ปกติ)
+  # external_node_modules = ["mysql2"]
