@@ -27,20 +27,13 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/customers", customersRouter);
 app.use("/api/v1/users", usersRouter);
 
-// Swagger UI
-import path from "path";
-import { fileURLToPath } from "url";
+// ถ้าใช้ Swagger UI (จากที่ตั้งไว้เป็น /swagger)
 import fs from "fs";
 import YAML from "yaml";
 import swaggerUi from "swagger-ui-express";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// ชี้ไปยัง root ของโปรเจกต์
-const openapiPath = path.resolve(__dirname, "../../openapi.yaml");
-const openapiFile = fs.readFileSync(openapiPath, "utf8");
+const openapiFile = fs.readFileSync("./openapi.yaml", "utf8");
 const swaggerDoc = YAML.parse(openapiFile);
+app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerDoc, { explorer: true }));
 
 app.use(notFound);
 app.use(errorHandler);
