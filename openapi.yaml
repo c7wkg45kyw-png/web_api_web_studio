@@ -1,0 +1,445 @@
+openapi: 3.0.3
+info:
+  title: Node API (Auth / Customers / Users)
+  version: 1.0.0
+  description: >
+    API สำหรับระบบ Login ที่รองรับ role (employee/customer), โปรไฟล์ลูกค้า,
+    และการจัดการผู้ใช้ (แยก service layer แล้ว).
+servers:
+  - url: http://localhost:3000/api/v1
+
+tags:
+  - name: Auth
+  - name: Customers
+  - name: Users
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: สมัครสมาชิก (customer)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RegisterResponse' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: ล็อกอิน (employee/customer)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: ออก access token ใหม่ด้วย refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RefreshRequest' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccessTokenOnly' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: ออกจากระบบ (ลบ refresh token)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LogoutRequest' }
+      responses:
+        '204':
+          description: No Content
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: ข้อมูลผู้ใช้จาก access token
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MeResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /customers:
+    get:
+      tags: [Customers]
+      summary: รายชื่อลูกค้าทั้งหมด (เฉพาะ employee)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/CustomerWithEmail' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /customers/me:
+    get:
+      tags: [Customers]
+      summary: ดูโปรไฟล์ลูกค้าของตัวเอง (customer)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CustomerMeResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+    put:
+      tags: [Customers]
+      summary: แก้โปรไฟล์ลูกค้าของตัวเอง (customer)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CustomerUpdateRequest' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CustomerMeResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /users:
+    get:
+      tags: [Users]
+      summary: รายชื่อผู้ใช้ทั้งหมด (employee)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/User' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+    post:
+      tags: [Users]
+      summary: สร้าง employee ใหม่
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateEmployeeRequest' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  data: { $ref: '#/components/schemas/User' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: ดูรายละเอียดผู้ใช้ (พ่วง customer ถ้ามี) (employee)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          schema: { type: string, format: uuid }
+          required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  data: { $ref: '#/components/schemas/UserWithCustomer' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+    delete:
+      tags: [Users]
+      summary: ลบผู้ใช้ (employee)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          schema: { type: string, format: uuid }
+          required: true
+      responses:
+        '204': { description: No Content }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /users/{id}/role:
+    patch:
+      tags: [Users]
+      summary: เปลี่ยน role ของผู้ใช้ (employee)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          schema: { type: string, format: uuid }
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateRoleRequest' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: string, format: uuid }
+                      role: { $ref: '#/components/schemas/Role' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Role:
+      type: string
+      enum: [employee, customer]
+
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        role: { $ref: '#/components/schemas/Role' }
+        created_at: { type: string, format: date-time }
+
+    Customer:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        first_name: { type: string, nullable: true }
+        last_name: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
+        address: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    CustomerWithEmail:
+      allOf:
+        - $ref: '#/components/schemas/Customer'
+        - type: object
+          properties:
+            email: { type: string, format: email }
+
+    UserWithCustomer:
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - type: object
+          properties:
+            customer_id: { type: string, format: uuid, nullable: true }
+            first_name: { type: string, nullable: true }
+            last_name: { type: string, nullable: true }
+            phone: { type: string, nullable: true }
+            address: { type: string, nullable: true }
+
+    Tokens:
+      type: object
+      properties:
+        access: { type: string, description: "JWT access token" }
+        refresh: { type: string, description: "JWT refresh token" }
+
+    OkFlag:
+      type: object
+      properties:
+        ok: { type: boolean }
+
+    ErrorResponse:
+      type: object
+      properties:
+        ok: { type: boolean, example: false }
+        error:
+          type: object
+          properties:
+            message: { type: string }
+            details: { type: string, nullable: true }
+
+    RegisterRequest:
+      type: object
+      required: [email, password, first_name, last_name]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 6 }
+        first_name: { type: string }
+        last_name: { type: string }
+        phone: { type: string, nullable: true }
+        address: { type: string, nullable: true }
+
+    RegisterResponse:
+      type: object
+      properties:
+        ok: { type: boolean }
+        data:
+          type: object
+          properties:
+            user: { $ref: '#/components/schemas/User' }
+            customer: { $ref: '#/components/schemas/Customer' }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 6 }
+
+    LoginResponse:
+      type: object
+      properties:
+        ok: { type: boolean }
+        data:
+          type: object
+          properties:
+            user: { $ref: '#/components/schemas/User' }
+            tokens: { $ref: '#/components/schemas/Tokens' }
+
+    RefreshRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token: { type: string, minLength: 10 }
+
+    AccessTokenOnly:
+      type: object
+      properties:
+        ok: { type: boolean }
+        data:
+          type: object
+          properties:
+            access: { type: string }
+
+    LogoutRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token: { type: string }
+
+    CustomerUpdateRequest:
+      type: object
+      properties:
+        first_name: { type: string }
+        last_name: { type: string }
+        phone: { type: string }
+        address: { type: string }
+
+    CreateEmployeeRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 6 }
+
+    UpdateRoleRequest:
+      type: object
+      required: [role]
+      properties:
+        role: { $ref: '#/components/schemas/Role' }
+
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
