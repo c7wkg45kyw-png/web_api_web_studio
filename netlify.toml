@@ -1,0 +1,22 @@
+[build]
+  command = "npm run build || echo 'no build step'" # ไม่มีขั้น build ก็ไม่เป็นไร
+  publish = "public"
+  functions = "netlify/functions"
+
+# ให้ /api/* วิ่งเข้า Express ใน Function
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
+# map /swagger → เส้นทางในแอป (ผ่านฟังก์ชันเดียวกัน)
+[[redirects]]
+  from = "/swagger"
+  to = "/.netlify/functions/api/swagger"
+  status = 200
+
+# health ก็เช่นกัน
+[[redirects]]
+  from = "/health"
+  to = "/.netlify/functions/api/health"
+  status = 200
