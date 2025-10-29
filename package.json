@@ -2,8 +2,8 @@
   "name": "web_server_web_studi_oat",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "dev": "nodemon --ext js,json --watch src --exec node src/server.js",
     "start": "node src/server.js"
   },
   "keywords": [],

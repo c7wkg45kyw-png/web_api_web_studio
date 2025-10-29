@@ -4,7 +4,7 @@
 
 [functions]
   node_bundler = "esbuild"
-  included_files = ["openapi.yaml"]
+  included_files = ["openapi.yaml"]  # ถ้าใช้ Swagger
 
 [[redirects]]
   from = "/api/*"
