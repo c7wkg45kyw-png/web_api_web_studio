@@ -37,26 +37,45 @@ import swaggerUi from "swagger-ui-express";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// app.js อยู่ที่ src/app.js  → root = ../../
-const rootDir = path.resolve(__dirname, "..", "..");
-const openapiPath = path.join(rootDir, "openapi.yaml");
+// --- Swagger: safe path for Netlify & local ---
+import fs from "fs";
+import path from "path";
+import YAML from "yaml";
+import swaggerUi from "swagger-ui-express";
 
-let swaggerDoc;
-try {
-  const openapiFile = fs.readFileSync(openapiPath, "utf8");
-  swaggerDoc = YAML.parse(openapiFile);
-} catch (e) {
-  console.error("[Swagger] openapi.yaml not found at:", openapiPath, e);
-  // fallback เอกสารขั้นต่ำ เพื่อไม่ให้แอปพัง
-  swaggerDoc = {
-    openapi: "3.0.3",
-    info: { title: "API Docs", version: "1.0.0" },
-    paths: {},
-  };
+function resolveOpenapiPath() {
+  // 1) บน Netlify Functions: process.cwd() จะเป็นโฟลเดอร์ฟังก์ชัน (/var/task)
+  const p1 = path.resolve(process.cwd(), "openapi.yaml");
+  if (fs.existsSync(p1)) return p1;
+
+  // 2) เผื่อกรณีรัน local: โฟลเดอร์ root โปรเจกต์
+  const p2 = path.resolve(process.cwd(), "./openapi.yaml");
+  if (fs.existsSync(p2)) return p2;
+
+  // 3) เผื่อโครงสร้างที่มี src/: ลองไล่ขึ้นไปอีกชั้น
+  const p3 = path.resolve(process.cwd(), "../openapi.yaml");
+  if (fs.existsSync(p3)) return p3;
+
+  return null;
+}
+
+let swaggerDoc = { openapi: "3.0.3", info: { title: "API Docs", version: "1.0.0" }, paths: {} };
+const openapiPath = resolveOpenapiPath();
+if (openapiPath) {
+  try {
+    const yamlText = fs.readFileSync(openapiPath, "utf8");
+    swaggerDoc = YAML.parse(yamlText);
+    console.log("[Swagger] Loaded:", openapiPath);
+  } catch (e) {
+    console.error("[Swagger] Failed to read YAML:", openapiPath, e);
+  }
+} else {
+  console.warn("[Swagger] openapi.yaml not found. Serving minimal doc.");
 }
 
 app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerDoc, { explorer: true }));
 // --- /Swagger ---
+
 
 
 app.use(notFound);
